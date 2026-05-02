@@ -29,7 +29,7 @@ admin.initializeApp({
 
 // ── Middleware ─────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
+app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "10mb" }));
 
 const limiter   = rateLimit({ windowMs: 15*60*1000, max: 100 });

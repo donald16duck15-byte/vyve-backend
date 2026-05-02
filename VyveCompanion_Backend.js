@@ -452,6 +452,22 @@ app.post("/api/notify/daily", async (req, res) => {
 // ── Health check ───────────────────────────────────────────────
 app.get("/health", (_, res) => res.json({ status:"ok", version:"2.0.0" }));
 
+app.post("/api/chat/ai", async (req, res) => {
+  try {
+    const { messages, system } = req.body;
+    const response = await ai.messages.create({
+      model: "claude-sonnet-4-5-20251001",
+      max_tokens: 400,
+      system: system || "You are a warm caring AI companion.",
+      messages,
+    });
+    res.json({ reply: response.content[0]?.text || "💕" });
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({ reply: "I'm here for you 💕" });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`🚀 Vyve Backend on port ${PORT}`));
 module.exports = app;

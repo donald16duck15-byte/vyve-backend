@@ -1,0 +1,102 @@
+{
+  "name": "vyve-companion-backend",
+  "version": "2.0.0",
+  "description": "Vyve Companion Backend — Node.js + Express + PostgreSQL + Firebase + Stripe",
+  "main": "VyveCompanion_Backend.js",
+  "scripts": {
+    "start":     "node VyveCompanion_Backend.js",
+    "dev":       "nodemon VyveCompanion_Backend.js",
+    "db:push":   "npx prisma db push",
+    "db:studio": "npx prisma studio",
+    "db:seed":   "node seed.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk":  "^0.30.0",
+    "@prisma/client":     "^5.0.0",
+    "cors":               "^2.8.5",
+    "dotenv":             "^16.0.0",
+    "express":            "^4.18.0",
+    "express-rate-limit": "^7.0.0",
+    "firebase-admin":     "^12.0.0",
+    "helmet":             "^7.0.0",
+    "stripe":             "^14.0.0"
+  },
+  "devDependencies": {
+    "nodemon":            "^3.0.0",
+    "prisma":             "^5.0.0"
+  },
+  "engines": { "node": ">=18.0.0" },
+
+  "vyve_deploy_guide": {
+    "step1_env": {
+      "description": "Create .env file with these variables",
+      "DATABASE_URL":              "postgresql://user:password@host:5432/vyve",
+      "ANTHROPIC_API_KEY":         "sk-ant-...",
+      "FIREBASE_PROJECT_ID":       "vyve-companion",
+      "FIREBASE_CLIENT_EMAIL":     "firebase-adminsdk-xxx@vyve-companion.iam.gserviceaccount.com",
+      "FIREBASE_PRIVATE_KEY":      "-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n",
+      "STRIPE_SECRET_KEY":         "sk_live_...",
+      "STRIPE_WEBHOOK_SECRET":     "whsec_...",
+      "STRIPE_PRICE_MONTHLY":      "price_xxx_monthly",
+      "STRIPE_PRICE_ANNUAL":       "price_xxx_annual",
+      "FRONTEND_URL":              "https://yourapp.com",
+      "INTERNAL_SECRET":           "your-cron-secret",
+      "PORT":                      "3001"
+    },
+    "step2_database": {
+      "description": "Set up PostgreSQL",
+      "options": ["Railway.app (easiest)", "Supabase (free tier)", "AWS RDS", "Neon.tech (serverless)"],
+      "commands": ["npm install", "npx prisma db push", "npx prisma studio (verify tables)"]
+    },
+    "step3_firebase": {
+      "description": "Firebase setup",
+      "steps": [
+        "Create project at console.firebase.google.com",
+        "Enable Email/Password + Google + Apple auth",
+        "Download service account JSON from Project Settings > Service Accounts",
+        "Copy projectId, clientEmail, privateKey to .env"
+      ]
+    },
+    "step4_stripe": {
+      "description": "Stripe setup",
+      "steps": [
+        "Create account at stripe.com",
+        "Create 2 products: Vyve Monthly ($29/mo) and Vyve Annual ($120/yr)",
+        "Copy price IDs to STRIPE_PRICE_MONTHLY and STRIPE_PRICE_ANNUAL",
+        "Set up webhook endpoint: POST /api/webhook/stripe",
+        "Events to listen: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed"
+      ]
+    },
+    "step5_deploy": {
+      "description": "Deploy options",
+      "easiest":    "Railway.app — connect GitHub, set env vars, deploy in 2 min",
+      "alternative": "Render.com, Heroku, AWS EC2, DigitalOcean App Platform",
+      "commands": ["npm start"]
+    },
+    "step6_cron": {
+      "description": "Daily check-in notifications",
+      "setup": "Set up a daily cron job calling POST /api/notify/daily with header x-secret: YOUR_INTERNAL_SECRET",
+      "services": ["cron-job.org (free)", "GitHub Actions scheduled workflow", "Railway cron"]
+    },
+    "api_endpoints": {
+      "auth":         "POST /api/auth/login",
+      "user_me":      "GET/PATCH /api/user/me",
+      "chat_send":    "POST /api/chat/send",
+      "chat_history": "GET /api/chat/history/:companionId",
+      "chat_clear":   "DELETE /api/chat/history/:companionId",
+      "period_get":   "GET /api/period",
+      "period_setup": "POST /api/period/setup",
+      "period_log":   "POST /api/period/log",
+      "sub_create":   "POST /api/subscription/create",
+      "sub_cancel":   "POST /api/subscription/cancel",
+      "coins_buy":    "POST /api/coins/purchase",
+      "coins_confirm":"POST /api/coins/confirm",
+      "coins_spend":  "POST /api/coins/spend",
+      "xp_add":       "POST /api/xp/add",
+      "memories_get": "GET /api/memories",
+      "memories_del": "DELETE /api/memories",
+      "notify":       "POST /api/notify/send",
+      "health":       "GET /health"
+    }
+  }
+}

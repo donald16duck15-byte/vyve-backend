@@ -29,7 +29,7 @@ admin.initializeApp({
 
 // ── Middleware ─────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 app.use(express.json({ limit: "10mb" }));
 
 const limiter   = rateLimit({ windowMs: 15*60*1000, max: 100 });
@@ -449,24 +449,26 @@ app.post("/api/notify/daily", async (req, res) => {
   res.json({ sent: msgs.length });
 });
 
-// ── Health check ───────────────────────────────────────────────
-app.get("/health", (_, res) => res.json({ status:"ok", version:"2.0.0" }));
-
+// ── AI Chat Route (used by frontend) ──────────────────────────
 app.post("/api/chat/ai", async (req, res) => {
   try {
     const { messages, system } = req.body;
+    if(!messages || !messages.length) return res.status(400).json({ reply:"Hey talk to me 💕" });
     const response = await ai.messages.create({
-      model: "claude-sonnet-4-5-20251001",
+      model:      "claude-haiku-4-5-20251001",
       max_tokens: 400,
-      system: system || "You are a warm caring AI companion.",
-      messages,
+      system:     system || "You are a warm caring AI companion. Be real, human, never sound like AI.",
+      messages:   messages.filter(m => m.content && m.content.trim()),
     });
-    res.json({ reply: response.content[0]?.text || "💕" });
+    res.json({ reply: response.content[0]?.text || "I'm here for you 💕" });
   } catch(e) {
-    console.error(e);
-    res.status(500).json({ reply: "I'm here for you 💕" });
+    console.error("AI route error:", e.message);
+    res.status(500).json({ reply: "I'm here for you 💕", error: e.message });
   }
 });
+
+// ── Health check ───────────────────────────────────────────────
+app.get("/health", (_, res) => res.json({ status:"ok", version:"2.0.0" }));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`🚀 Vyve Backend on port ${PORT}`));

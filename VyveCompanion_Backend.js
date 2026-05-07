@@ -32,8 +32,9 @@ app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 app.use(express.json({ limit: "10mb" }));
 
-const limiter   = rateLimit({ windowMs: 15*60*1000, max: 100 });
-const aiLimiter = rateLimit({ windowMs: 60*1000,    max: 30  });
+const limiter   = rateLimit({ windowMs: 15*60*1000, max: 100, validate: {xForwardedForHeader: false} });
+const aiLimiter = rateLimit({ windowMs: 60*1000,    max: 30,  validate: {xForwardedForHeader: false} });
+app.set("trust proxy", 1);
 app.use("/api",      limiter);
 app.use("/api/chat", aiLimiter);
 

@@ -450,18 +450,32 @@ app.post("/api/notify/daily", async (req, res) => {
   res.json({ sent: msgs.length });
 });
 
-// ── AI Chat Route (used by frontend) ──────────────────────────
+// ── AI Chat Route (Gemini-powered) ────────────────────────────
 app.post("/api/chat/ai", async (req, res) => {
   try {
     const { messages, system } = req.body;
     if(!messages || !messages.length) return res.status(400).json({ reply:"Hey talk to me 💕" });
-    const response = await ai.messages.create({
-      model:      "claude-haiku-4-5-20251001",
-      max_tokens: 400,
-      system:     system || "You are a warm caring AI companion. Be real, human, never sound like AI.",
-      messages:   messages.filter(m => m.content && m.content.trim()),
+    
+    // Build Gemini-format conversation
+    const sysPrompt = system || "You are a warm caring AI companion. Be real, human, never sound like AI.";
+    const cleanMsgs = messages.filter(m => m.content && m.content.trim());
+    const contents = cleanMsgs.map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }]
+    }));
+    
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        contents,
+        systemInstruction: { parts: [{ text: sysPrompt }] },
+        generationConfig: { maxOutputTokens: 400, temperature: 0.9 }
+      })
     });
-    res.json({ reply: response.content[0]?.text || "I'm here for you 💕" });
+    const d = await r.json();
+    const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || "I'm here for you 💕";
+    res.json({ reply });
   } catch(e) {
     console.error("AI route error:", e.message);
     res.status(500).json({ reply: "I'm here for you 💕", error: e.message });
